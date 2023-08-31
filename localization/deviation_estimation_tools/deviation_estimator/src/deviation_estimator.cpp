@@ -255,7 +255,7 @@ void DeviationEstimator::timer_callback()
   traj_data.pose_list = pose_buf_;
   traj_data.vx_list = extract_sub_trajectory(vx_all_, t0_rclcpp_time, t1_rclcpp_time);
   traj_data.gyro_list = extract_sub_trajectory(gyro_all_, t0_rclcpp_time, t1_rclcpp_time);
-  bool is_straight = get_mean_abs_wz(traj_data.gyro_list) > wz_threshold_;
+  bool is_straight = get_mean_abs_wz(traj_data.gyro_list) < wz_threshold_;
   bool is_stopped = get_mean_abs_vx(traj_data.vx_list) < vx_threshold_;
   bool is_constant_velocity = std::abs(get_mean_accel(traj_data.vx_list)) < accel_threshold_;
 
@@ -263,8 +263,10 @@ void DeviationEstimator::timer_callback()
     vel_coef_module_->update_coef(traj_data);
     traj_data_list_for_velocity_.push_back(traj_data);
   }
-  gyro_bias_module_->update_bias(traj_data);
-  traj_data_list_for_gyro_.push_back(traj_data);
+  if (is_straight) {
+    gyro_bias_module_->update_bias(traj_data);
+    traj_data_list_for_gyro_.push_back(traj_data);
+  }
 
   pose_buf_.clear();
 
